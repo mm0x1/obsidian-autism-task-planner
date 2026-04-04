@@ -7,6 +7,7 @@ export interface Task {
   durationMinutes: number;
   category: string;
   completed: boolean;
+  recurring: boolean;
   lineIndex: number;
 }
 
@@ -14,6 +15,8 @@ export interface Task {
 const DURATION_RE = /(\d+h\d+m|\d+h|\d+m)$/;
 // Matches a category tag at the end: -word (preceded by whitespace or start)
 const CATEGORY_RE = /\s(-\w+)$/;
+// Marks a task as recurring — stripped from display name
+const RECURRING_RE = /\s~$/;
 
 export function parseDurationToken(token: string): number {
   const hmMatch = token.match(/^(\d+)h(\d+)m$/);
@@ -66,6 +69,13 @@ export function parseLine(line: string, lineIndex: number): Task | null {
       : content.slice(4).trim();
   }
 
+  // Detect and strip recurring marker (~) before parsing category/duration
+  let recurring = false;
+  if (RECURRING_RE.test(content)) {
+    recurring = true;
+    content = content.replace(RECURRING_RE, '');
+  }
+
   // Extract category: last " -word" at end of line
   let category = "other";
   const catMatch = content.match(CATEGORY_RE);
@@ -92,6 +102,7 @@ export function parseLine(line: string, lineIndex: number): Task | null {
     durationMinutes,
     category,
     completed,
+    recurring,
     lineIndex,
   };
 }

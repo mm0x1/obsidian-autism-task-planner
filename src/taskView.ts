@@ -258,6 +258,11 @@ export class TaskPlannerView extends ItemView {
 		durBadge.textContent = formatDuration(task.durationMinutes);
 		durBadge.addEventListener('click', () => this.startDurationEdit(task, durBadge));
 
+		if (task.recurring) {
+			const recurBadge = meta.createSpan({ cls: 'tp-badge tp-badge-recur', title: 'Recurring task' });
+			recurBadge.textContent = '↻';
+		}
+
 		const startLabel = meta.createSpan({ cls: 'tp-start-label' });
 		startLabel.textContent = this.calcStartTime(task);
 		startLabel.setAttribute('data-start-label', task.id);
@@ -348,11 +353,23 @@ export class TaskPlannerView extends ItemView {
 			text: `${activeTasks.length} tasks · ${formatDuration(totalMins)} · Done at ${formatTime(endTime)}`,
 		});
 
-		const clearBtn = footer.createEl('button', {
+		const footerBtns = footer.createDiv({ cls: 'tp-footer-btns' });
+
+		const clearBtn = footerBtns.createEl('button', {
 			cls: 'tp-btn tp-btn-clear',
 			text: 'Clear completed',
 		});
 		clearBtn.addEventListener('click', () => this.clearCompleted());
+
+		const hasRecurringCompleted = this.tasks.some(t => t.recurring && t.completed);
+		if (hasRecurringCompleted) {
+			const resetBtn = footerBtns.createEl('button', {
+				cls: 'tp-btn tp-btn-reset',
+				text: 'Reset all',
+				attr: { title: 'Reset all recurring tasks to incomplete' },
+			});
+			resetBtn.addEventListener('click', () => this.resetRecurring().catch(console.error));
+		}
 	}
 
 	// -------------------------------------------------------------------------
@@ -476,7 +493,20 @@ export class TaskPlannerView extends ItemView {
 	}
 
 	private clearCompleted(): void {
-		this.tasks = this.tasks.filter(t => !t.completed);
+		// Recurring tasks are never cleared — they reset via "Reset all"
+		this.tasks = this.tasks.filter(t => !t.completed || t.recurring);
+		this.rebuildCards();
+		this.recalcTimes();
+	}
+
+	private async resetRecurring(): Promise<void> {
+		const toReset = this.tasks.filter(t => t.recurring && t.completed);
+		for (const task of toReset) {
+			task.completed = false;
+			if (this.plugin.settings.syncCompletions && this.sourceFile) {
+				await this.syncUncompleteToFile(task);
+			}
+		}
 		this.rebuildCards();
 		this.recalcTimes();
 	}

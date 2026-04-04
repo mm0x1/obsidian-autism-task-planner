@@ -311,6 +311,27 @@
   color: var(--color-red, #D9534F);
 }
 
+.tp-btn-reset:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+}
+
+.tp-footer-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tp-badge-recur {
+  color: var(--text-faint);
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background: transparent;
+  cursor: default;
+}
+
 /* ── Mobile overrides (.is-mobile added by Obsidian on mobile app) ─────────
    Primary mobile detection. All touch-critical sizing lives here.          */
 .is-mobile .task-planner-root {
@@ -405,6 +426,15 @@
   font-size: 14px;
   padding: 8px 14px;
   min-height: 40px;
+}
+
+.is-mobile .tp-badge-recur {
+  font-size: 12px;
+  padding: 4px 7px;
+}
+
+.is-mobile .tp-footer-btns {
+  gap: 8px;
 }
 
 /* ── Touchscreen laptop fallback (@media pointer:coarse) ───────────────────
