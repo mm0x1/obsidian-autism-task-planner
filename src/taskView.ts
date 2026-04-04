@@ -209,6 +209,9 @@ export class TaskPlannerView extends ItemView {
 			// Must be false — the default (true) calls preventDefault() on every click
 			// that touches a filtered card, which swallows button click events on done cards.
 			preventOnFilter: false,
+			// Restrict drag to the handle only — without this, any touch on the card
+			// starts a drag, making it impossible to scroll on mobile.
+			handle: '.tp-drag-handle',
 			onEnd: (evt) => {
 				const { oldIndex, newIndex } = evt;
 				if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
