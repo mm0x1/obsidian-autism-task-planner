@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-autism-task-planner",
+	"name": "Autism Task Planner",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Reduce your mental load by sequencing your tasks in a drag-and-drop UI with compounding time estimates",
+	"author": "mm0x1",
+	"authorUrl": "https://github.com/mm0x1",
+	"isDesktopOnly": false
+}

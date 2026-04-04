@@ -1,0 +1,439 @@
+/* Task Planner Plugin Styles */
+
+/* ── Design tokens ───────────────────────────────────────────────────────────
+   Override these vars to retheme without touching anything else.           */
+:root {
+  --tp-font-xs:    11px;
+  --tp-font-sm:    12.5px;
+  --tp-font-base:  13px;
+  --tp-font-md:    14px;
+  --tp-tap-min:    28px;   /* comfortable mouse click target on desktop */
+  --tp-pad-card:   6px 8px;
+  --tp-pad-btn-v:  2px;
+  --tp-pad-btn-h:  6px;
+  --tp-gap-card:   6px;
+  --tp-gap-meta:   4px;
+  --tp-gap-action: 3px;
+  --tp-radius:     6px;
+}
+
+/* ── Root container ──────────────────────────────────────────────────────── */
+.task-planner-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  font-size: var(--tp-font-base);
+  color: var(--text-normal);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.tp-header {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.tp-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.tp-title {
+  margin: 0;
+  font-size: var(--tp-font-md);
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.tp-source-name {
+  font-size: var(--tp-font-xs);
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tp-source-name.tp-warn {
+  color: var(--text-warning, #e3a72c);
+  white-space: normal;
+}
+
+.tp-start-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;   /* wraps on narrow sidebars */
+}
+
+.tp-label {
+  font-size: var(--tp-font-xs);
+  color: var(--text-muted);
+}
+
+.tp-start-input {
+  font-size: var(--tp-font-xs);
+  padding: 2px 5px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  min-height: var(--tp-tap-min);
+}
+
+/* ── Task list ───────────────────────────────────────────────────────────── */
+.tp-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tp-empty {
+  color: var(--text-muted);
+  padding: 16px;
+  text-align: center;
+  font-size: var(--tp-font-xs);
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.tp-card {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-gap-card);
+  padding: var(--tp-pad-card);
+  border-radius: var(--tp-radius);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  cursor: default;
+  transition: background 0.1s, opacity 0.15s;
+}
+
+.tp-card:hover {
+  background: var(--background-secondary-alt);
+}
+
+.tp-card--done {
+  opacity: 0.45;
+}
+
+.tp-card--done .tp-task-name {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.tp-card-ghost {
+  opacity: 0.3;
+  background: var(--interactive-accent);
+}
+
+/* Drag handle */
+.tp-drag-handle {
+  cursor: grab;
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+  padding: 4px 6px;   /* hit target larger than the character itself */
+  border-radius: 3px;
+}
+
+.tp-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Card body */
+.tp-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.tp-task-name {
+  font-size: var(--tp-font-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+
+.tp-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-gap-meta);
+  flex-wrap: wrap;
+}
+
+/* Badges */
+.tp-badge {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.tp-badge-cat {
+  /* color, borderColor, backgroundColor are set inline by applyBadgeStyle() */
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: filter 0.1s;
+}
+
+.tp-badge-cat:hover {
+  filter: brightness(1.2);
+}
+
+/* Select shown inside the category badge when editing */
+.tp-cat-select {
+  font-size: 10px;
+  font-weight: 600;
+  background: transparent;
+  /* color is set inline to match the badge text color */
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  max-width: 110px;
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+.tp-badge-dur {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.tp-badge-dur:hover {
+  background: var(--interactive-accent);
+  color: #fff;
+}
+
+.tp-start-label {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-left: auto;
+}
+
+/* Inline duration input */
+.tp-dur-input {
+  font-size: var(--tp-font-xs);
+  border: none;
+  outline: none;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  padding: 0 2px;
+  min-width: 3ch;
+  max-width: 7ch;
+}
+
+/* ── Action buttons ──────────────────────────────────────────────────────── */
+.tp-card-actions {
+  display: flex;
+  gap: var(--tp-gap-action);
+  flex-shrink: 0;
+}
+
+.tp-btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--tp-pad-btn-v) var(--tp-pad-btn-h);
+  border-radius: 4px;
+  font-size: var(--tp-font-base);
+  color: var(--text-muted);
+  line-height: 1;
+  min-height: var(--tp-tap-min);
+  min-width: var(--tp-tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s, background 0.1s;
+}
+
+.tp-btn-icon:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.tp-btn-complete:hover  { color: var(--color-green, #5CB85C); }
+.tp-btn-uncomplete:hover { color: var(--color-yellow, #e3a72c); }
+.tp-btn-delete:hover    { color: var(--color-red, #D9534F); }
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.tp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.tp-footer-times {
+  font-size: var(--tp-font-xs);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tp-btn {
+  font-size: var(--tp-font-xs);
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.tp-btn:hover {
+  background: var(--background-secondary-alt);
+  color: var(--text-normal);
+}
+
+.tp-btn-clear:hover {
+  border-color: var(--color-red, #D9534F);
+  color: var(--color-red, #D9534F);
+}
+
+/* ── Mobile overrides (.is-mobile added by Obsidian on mobile app) ─────────
+   Primary mobile detection. All touch-critical sizing lives here.          */
+.is-mobile .task-planner-root {
+  font-size: 15px;
+}
+
+.is-mobile .tp-header {
+  padding: 12px 14px 10px;
+}
+
+.is-mobile .tp-source-name {
+  font-size: 13px;
+}
+
+.is-mobile .tp-start-row {
+  gap: 8px;
+}
+
+.is-mobile .tp-label {
+  font-size: 13px;
+}
+
+.is-mobile .tp-start-input {
+  font-size: 16px;   /* 16px prevents iOS auto-zoom on input focus */
+  padding: 6px 10px;
+  min-height: 36px;
+}
+
+.is-mobile .tp-drag-handle {
+  padding: 12px 10px;
+  font-size: 20px;
+}
+
+.is-mobile .tp-card {
+  padding: 10px 8px;
+  gap: 8px;
+}
+
+.is-mobile .tp-task-name {
+  font-size: 15px;
+  white-space: normal;   /* allow wrapping — mobile has room vertically */
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.is-mobile .tp-card-meta {
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.is-mobile .tp-badge {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.is-mobile .tp-cat-select {
+  font-size: 12px;
+  min-height: 28px;
+}
+
+.is-mobile .tp-badge-dur {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.is-mobile .tp-start-label {
+  font-size: 12px;
+}
+
+.is-mobile .tp-card-actions {
+  gap: 6px;
+}
+
+.is-mobile .tp-btn-icon {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px;
+  font-size: 18px;
+}
+
+.is-mobile .tp-footer {
+  padding: 10px 14px;
+  gap: 8px;
+}
+
+.is-mobile .tp-footer-times {
+  font-size: 13px;
+}
+
+.is-mobile .tp-btn {
+  font-size: 14px;
+  padding: 8px 14px;
+  min-height: 40px;
+}
+
+/* ── Touchscreen laptop fallback (@media pointer:coarse) ───────────────────
+   Catches touch-capable desktops and cases where .is-mobile isn't present. */
+@media (pointer: coarse) {
+  .tp-btn-icon {
+    min-height: 44px;
+    min-width: 36px;
+    padding: 10px 8px;
+  }
+
+  .tp-drag-handle {
+    padding: 10px 8px;
+  }
+
+  .tp-start-input {
+    font-size: 16px;
+    min-height: 36px;
+    padding: 6px 8px;
+  }
+
+  .tp-badge-dur {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .tp-btn {
+    min-height: 36px;
+    padding: 6px 10px;
+  }
+}
