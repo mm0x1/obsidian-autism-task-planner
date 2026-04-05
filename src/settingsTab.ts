@@ -15,7 +15,6 @@ export const DEFAULT_CATEGORY_COLORS: Record<string, string> = {
   health:    "#5CB85C",  // green
   cleaning:  "#F0AD4E",  // amber
   chores:    "#D9534F",  // red
-  chore:     "#D9534F",  // red (alias)
   hobby:     "#9B59B6",  // purple
   work:      "#1ABC9C",  // teal
   cooking:   "#E67E22",  // warm orange

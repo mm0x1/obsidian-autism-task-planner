@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-task-planner",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Sequenced task planner with time estimates for daily task lists.",
 	"main": "main.js",
 	"type": "module",

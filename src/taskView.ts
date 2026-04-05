@@ -4,7 +4,6 @@ import type TaskPlannerPlugin from './main';
 import {
 	Task,
 	addMinutes,
-	capitalizeFirst,
 	formatDuration,
 	formatTime,
 	parseDurationToken,
@@ -13,6 +12,10 @@ import {
 import { DEFAULT_CATEGORY_COLORS } from './settingsTab';
 
 export const VIEW_TYPE_TASK_PLANNER = 'task-planner-view';
+
+function capitalizeFirst(str: string): string {
+	return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+}
 
 function hexToRgba(hex: string, alpha: number): string {
 	const h = hex.replace('#', '');
@@ -438,7 +441,7 @@ export class TaskPlannerView extends ItemView {
 			badge.empty();
 			badge.textContent = newCat;
 			this.applyBadgeStyle(badge, this.categoryColor(newCat));
-			if (this.plugin.settings.syncDurations && this.sourceFile) {
+			if (this.sourceFile) {
 				await this.syncCategoryToFile(task, prevCategory);
 			}
 		};
@@ -483,8 +486,7 @@ export class TaskPlannerView extends ItemView {
 
 	private deleteTask(task: Task): void {
 		this.tasks = this.tasks.filter(t => t.id !== task.id);
-		if (this.plugin.settings.syncCompletions && this.sourceFile) {
-			// Deletion syncs under the completions toggle
+		if (this.sourceFile) {
 			this.syncDeleteToFile(task).catch(console.error);
 		}
 		const card = this.listEl?.querySelector(`[data-task-id="${task.id}"]`);
@@ -505,11 +507,17 @@ export class TaskPlannerView extends ItemView {
 
 	private async resetRecurring(): Promise<void> {
 		const toReset = this.tasks.filter(t => t.recurring && t.completed);
-		for (const task of toReset) {
-			task.completed = false;
-			if (this.plugin.settings.syncCompletions && this.sourceFile) {
-				await this.syncUncompleteToFile(task);
-			}
+		for (const task of toReset) task.completed = false;
+		if (this.plugin.settings.syncCompletions && this.sourceFile && toReset.length > 0) {
+			const indices = new Set(toReset.map(t => t.lineIndex));
+			await this.modifyLines('could not reset recurring tasks in file', (lines) => {
+				for (const i of indices) {
+					const line = lines[i];
+					if (line !== undefined && line.startsWith('- [')) {
+						lines[i] = '- ' + line.replace(/^- \[.\] ?/, '');
+					}
+				}
+			});
 		}
 		this.rebuildCards();
 		this.recalcTimes();
@@ -518,127 +526,86 @@ export class TaskPlannerView extends ItemView {
 	// -------------------------------------------------------------------------
 	// Markdown sync
 
-	private async syncCompleteToFile(task: Task): Promise<void> {
+	/** Read the file, let fn mutate the lines array in place, then write back. */
+	private async modifyLines(errorMsg: string, fn: (lines: string[]) => void): Promise<void> {
 		if (!this.sourceFile) return;
 		try {
 			const content = await this.app.vault.read(this.sourceFile);
 			const lines = content.split('\n');
-			const line = lines[task.lineIndex];
-			if (line !== undefined && line.startsWith('- ') && !line.startsWith('- [')) {
-				lines[task.lineIndex] = `- [x] ${line.slice(2)}`;
-				await this.app.vault.modify(this.sourceFile, lines.join('\n'));
-			}
+			fn(lines);
+			await this.app.vault.modify(this.sourceFile, lines.join('\n'));
 		} catch (e) {
-			new Notice('Task Planner: could not sync completion to file.');
+			new Notice(`Task Planner: ${errorMsg}.`);
 			console.error(e);
 		}
+	}
+
+	private async syncCompleteToFile(task: Task): Promise<void> {
+		await this.modifyLines('could not sync completion to file', (lines) => {
+			const line = lines[task.lineIndex];
+			if (line === undefined || !/^- /i.test(line) || /^- \[x\]/i.test(line)) return;
+			// Plain item → prepend [x]; unchecked [ ] → flip bracket
+			lines[task.lineIndex] = line.startsWith('- [')
+				? line.replace(/^- \[.\]/, '- [x]')
+				: `- [x] ${line.slice(2)}`;
+		});
 	}
 
 	private async syncUncompleteToFile(task: Task): Promise<void> {
-		if (!this.sourceFile) return;
-		try {
-			const content = await this.app.vault.read(this.sourceFile);
-			const lines = content.split('\n');
+		await this.modifyLines('could not sync uncomplete to file', (lines) => {
 			const line = lines[task.lineIndex];
 			if (line !== undefined && line.startsWith('- [')) {
-				// Strip the checkbox prefix: "- [x] " → "- "
 				lines[task.lineIndex] = '- ' + line.replace(/^- \[.\] ?/, '');
-				await this.app.vault.modify(this.sourceFile, lines.join('\n'));
 			}
-		} catch (e) {
-			new Notice('Task Planner: could not sync uncomplete to file.');
-			console.error(e);
-		}
+		});
 	}
 
 	private async syncDeleteToFile(task: Task): Promise<void> {
-		if (!this.sourceFile) return;
-		try {
-			const content = await this.app.vault.read(this.sourceFile);
-			const lines = content.split('\n');
+		await this.modifyLines('could not sync deletion to file', (lines) => {
 			lines.splice(task.lineIndex, 1);
-			await this.app.vault.modify(this.sourceFile, lines.join('\n'));
-		} catch (e) {
-			new Notice('Task Planner: could not sync deletion to file.');
-			console.error(e);
-		}
+		});
 	}
 
 	private async syncBulkDeleteToFile(tasks: Task[]): Promise<void> {
-		if (!this.sourceFile || tasks.length === 0) return;
-		try {
-			const content = await this.app.vault.read(this.sourceFile);
-			const lines = content.split('\n');
-			const indicesToRemove = new Set(tasks.map(t => t.lineIndex));
-			const newLines = lines.filter((_, i) => !indicesToRemove.has(i));
-			await this.app.vault.modify(this.sourceFile, newLines.join('\n'));
-		} catch (e) {
-			new Notice('Task Planner: could not clear completed tasks from file.');
-			console.error(e);
-		}
+		if (tasks.length === 0) return;
+		const indicesToRemove = new Set(tasks.map(t => t.lineIndex));
+		await this.modifyLines('could not clear completed tasks from file', (lines) => {
+			const kept = lines.filter((_, i) => !indicesToRemove.has(i));
+			lines.splice(0, lines.length, ...kept);
+		});
 	}
 
 	private async syncReorderToFile(): Promise<void> {
-		if (!this.sourceFile) return;
-		try {
-			const content = await this.app.vault.read(this.sourceFile);
-			const allLines = content.split('\n');
-
-			// Collect all task line indices and their new order
-			const taskLineIndices = this.tasks.map(t => t.lineIndex).sort((a, b) => a - b);
-			const reorderedRaws = this.tasks.map(t => t.raw.trimEnd());
-
-			// Replace the lines at the original task positions with the new order
-			for (let i = 0; i < taskLineIndices.length; i++) {
-				const idx = taskLineIndices[i];
-				if (idx !== undefined && reorderedRaws[i] !== undefined) {
-					allLines[idx] = reorderedRaws[i]!;
+		await this.modifyLines('could not sync reorder to file', (lines) => {
+			const sortedIndices = this.tasks.map(t => t.lineIndex).sort((a, b) => a - b);
+			// Use current file content at each task's position — not stale task.raw
+			const reorderedLines = this.tasks.map(t => (lines[t.lineIndex] ?? t.raw).trimEnd());
+			for (let i = 0; i < sortedIndices.length; i++) {
+				const idx = sortedIndices[i];
+				if (idx !== undefined && reorderedLines[i] !== undefined) {
+					lines[idx] = reorderedLines[i]!;
 				}
 			}
-
-			await this.app.vault.modify(this.sourceFile, allLines.join('\n'));
-		} catch (e) {
-			new Notice('Task Planner: could not sync reorder to file.');
-			console.error(e);
-		}
+		});
 	}
 
 	private async syncCategoryToFile(task: Task, prevCategory: string): Promise<void> {
-		if (!this.sourceFile) return;
-		try {
-			const content = await this.app.vault.read(this.sourceFile);
-			const lines = content.split('\n');
+		await this.modifyLines('could not sync category to file', (lines) => {
 			const line = lines[task.lineIndex];
 			if (line === undefined) return;
-			// Replace the old -category tag with the new one, preserving trailing space
-			const updated = line.replace(
+			lines[task.lineIndex] = line.replace(
 				new RegExp(`(\\s)-${prevCategory}(\\s*)$`),
 				`$1-${task.category}$2`,
 			);
-			lines[task.lineIndex] = updated;
-			await this.app.vault.modify(this.sourceFile, lines.join('\n'));
-		} catch (e) {
-			new Notice('Task Planner: could not sync category to file.');
-			console.error(e);
-		}
+		});
 	}
 
 	private async syncDurationToFile(task: Task): Promise<void> {
-		if (!this.sourceFile) return;
-		try {
-			const content = await this.app.vault.read(this.sourceFile);
-			const lines = content.split('\n');
+		await this.modifyLines('could not sync duration to file', (lines) => {
 			const line = lines[task.lineIndex];
 			if (line === undefined) return;
-			// Replace the duration token in the original line
-			const newDurStr = formatDuration(task.durationMinutes);
-			const updated = line.replace(/(\d+h\d+m|\d+h|\d+m)/, newDurStr);
-			lines[task.lineIndex] = updated;
-			await this.app.vault.modify(this.sourceFile, lines.join('\n'));
-		} catch (e) {
-			new Notice('Task Planner: could not sync duration to file.');
-			console.error(e);
-		}
+			lines[task.lineIndex] = line.replace(/(\d+h\d+m|\d+h|\d+m)/, formatDuration(task.durationMinutes));
+		});
 	}
 
 	// -------------------------------------------------------------------------
@@ -646,7 +613,7 @@ export class TaskPlannerView extends ItemView {
 
 	private categoryColor(cat: string): string {
 		const userColors = this.plugin.settings.categoryColors;
-		return userColors[cat] ?? DEFAULT_CATEGORY_COLORS[cat] ?? '#95A5A6';
+		return userColors[cat] ?? DEFAULT_CATEGORY_COLORS[cat] ?? DEFAULT_CATEGORY_COLORS['other']!;
 	}
 
 	// Apply the dark-mode badge style: colored text + border, low-opacity fill

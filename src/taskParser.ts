@@ -83,6 +83,8 @@ export function parseLine(line: string, lineIndex: number): Task | null {
     category = catMatch[1]!.slice(1).toLowerCase(); // strip leading "-"
     content = content.slice(0, catMatch.index).trimEnd();
   }
+  // Normalize alias
+  if (category === "chore") category = "chores";
 
   // Extract duration: last duration token at end
   let durationMinutes = 0;
@@ -117,10 +119,6 @@ export function parseNote(content: string): Task[] {
   return tasks;
 }
 
-export function capitalizeFirst(str: string): string {
-  if (!str) return str;
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 function generateId(): string {
   // Simple unique ID without external deps
