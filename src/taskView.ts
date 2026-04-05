@@ -577,13 +577,21 @@ export class TaskPlannerView extends ItemView {
 
 	private async syncReorderToFile(): Promise<void> {
 		await this.modifyLines('could not sync reorder to file', (lines) => {
+			// sortedIndices = the file positions occupied by tasks, in ascending order
 			const sortedIndices = this.tasks.map(t => t.lineIndex).sort((a, b) => a - b);
-			// Use current file content at each task's position — not stale task.raw
+			// Read current file content for each task (not stale task.raw)
 			const reorderedLines = this.tasks.map(t => (lines[t.lineIndex] ?? t.raw).trimEnd());
 			for (let i = 0; i < sortedIndices.length; i++) {
 				const idx = sortedIndices[i];
 				if (idx !== undefined && reorderedLines[i] !== undefined) {
 					lines[idx] = reorderedLines[i]!;
+				}
+			}
+			// Update lineIndex on each task to reflect its new position in the file.
+			// Without this, the next reorder reads wrong lines (stale indices).
+			for (let i = 0; i < this.tasks.length; i++) {
+				if (sortedIndices[i] !== undefined) {
+					this.tasks[i]!.lineIndex = sortedIndices[i]!;
 				}
 			}
 		});
