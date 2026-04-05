@@ -526,14 +526,24 @@ export class TaskPlannerView extends ItemView {
 	// -------------------------------------------------------------------------
 	// Markdown sync
 
-	/** Read the file, let fn mutate the lines array in place, then write back. */
-	private async modifyLines(errorMsg: string, fn: (lines: string[]) => void): Promise<void> {
+	/**
+	 * Read the file, let fn mutate the lines array in place, write back.
+	 * onSuccess runs only when the write succeeds — use it to update task.lineIndex
+	 * values whenever fn changes the number of lines (splice/filter). Keeping index
+	 * updates here prevents stale-index bugs if the write fails.
+	 */
+	private async modifyLines(
+		errorMsg: string,
+		fn: (lines: string[]) => void,
+		onSuccess?: () => void,
+	): Promise<void> {
 		if (!this.sourceFile) return;
 		try {
 			const content = await this.app.vault.read(this.sourceFile);
 			const lines = content.split('\n');
 			fn(lines);
 			await this.app.vault.modify(this.sourceFile, lines.join('\n'));
+			onSuccess?.();
 		} catch (e) {
 			new Notice(`Task Planner: ${errorMsg}.`);
 			console.error(e);
@@ -561,40 +571,60 @@ export class TaskPlannerView extends ItemView {
 	}
 
 	private async syncDeleteToFile(task: Task): Promise<void> {
-		await this.modifyLines('could not sync deletion to file', (lines) => {
-			lines.splice(task.lineIndex, 1);
-		});
+		await this.modifyLines(
+			'could not sync deletion to file',
+			(lines) => { lines.splice(task.lineIndex, 1); },
+			// Shift every remaining task that lived below the deleted line
+			() => {
+				for (const t of this.tasks) {
+					if (t.lineIndex > task.lineIndex) t.lineIndex--;
+				}
+			},
+		);
 	}
 
 	private async syncBulkDeleteToFile(tasks: Task[]): Promise<void> {
 		if (tasks.length === 0) return;
 		const indicesToRemove = new Set(tasks.map(t => t.lineIndex));
-		await this.modifyLines('could not clear completed tasks from file', (lines) => {
-			const kept = lines.filter((_, i) => !indicesToRemove.has(i));
-			lines.splice(0, lines.length, ...kept);
-		});
+		await this.modifyLines(
+			'could not clear completed tasks from file',
+			(lines) => {
+				const kept = lines.filter((_, i) => !indicesToRemove.has(i));
+				lines.splice(0, lines.length, ...kept);
+			},
+			// Subtract the count of removed lines that were above each remaining task
+			() => {
+				for (const t of this.tasks) {
+					const removedAbove = [...indicesToRemove].filter(i => i < t.lineIndex).length;
+					t.lineIndex -= removedAbove;
+				}
+			},
+		);
 	}
 
 	private async syncReorderToFile(): Promise<void> {
-		await this.modifyLines('could not sync reorder to file', (lines) => {
-			// sortedIndices = the file positions occupied by tasks, in ascending order
-			const sortedIndices = this.tasks.map(t => t.lineIndex).sort((a, b) => a - b);
-			// Read current file content for each task (not stale task.raw)
-			const reorderedLines = this.tasks.map(t => (lines[t.lineIndex] ?? t.raw).trimEnd());
-			for (let i = 0; i < sortedIndices.length; i++) {
-				const idx = sortedIndices[i];
-				if (idx !== undefined && reorderedLines[i] !== undefined) {
-					lines[idx] = reorderedLines[i]!;
+		// Capture sortedIndices outside fn so onSuccess can read them
+		let sortedIndices: number[] = [];
+		await this.modifyLines(
+			'could not sync reorder to file',
+			(lines) => {
+				sortedIndices = this.tasks.map(t => t.lineIndex).sort((a, b) => a - b);
+				// Read current file content per task (not stale task.raw)
+				const reorderedLines = this.tasks.map(t => (lines[t.lineIndex] ?? t.raw).trimEnd());
+				for (let i = 0; i < sortedIndices.length; i++) {
+					const idx = sortedIndices[i];
+					if (idx !== undefined && reorderedLines[i] !== undefined) {
+						lines[idx] = reorderedLines[i]!;
+					}
 				}
-			}
-			// Update lineIndex on each task to reflect its new position in the file.
-			// Without this, the next reorder reads wrong lines (stale indices).
-			for (let i = 0; i < this.tasks.length; i++) {
-				if (sortedIndices[i] !== undefined) {
-					this.tasks[i]!.lineIndex = sortedIndices[i]!;
+			},
+			// Update each task's lineIndex to its new file position
+			() => {
+				for (let i = 0; i < this.tasks.length; i++) {
+					if (sortedIndices[i] !== undefined) this.tasks[i]!.lineIndex = sortedIndices[i]!;
 				}
-			}
-		});
+			},
+		);
 	}
 
 	private async syncCategoryToFile(task: Task, prevCategory: string): Promise<void> {
