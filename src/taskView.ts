@@ -494,7 +494,11 @@ export class TaskPlannerView extends ItemView {
 
 	private clearCompleted(): void {
 		// Recurring tasks are never cleared — they reset via "Reset all"
+		const toRemove = this.tasks.filter(t => t.completed && !t.recurring);
 		this.tasks = this.tasks.filter(t => !t.completed || t.recurring);
+		if (this.sourceFile && toRemove.length > 0) {
+			this.syncBulkDeleteToFile(toRemove).catch(console.error);
+		}
 		this.rebuildCards();
 		this.recalcTimes();
 	}
@@ -556,6 +560,20 @@ export class TaskPlannerView extends ItemView {
 			await this.app.vault.modify(this.sourceFile, lines.join('\n'));
 		} catch (e) {
 			new Notice('Task Planner: could not sync deletion to file.');
+			console.error(e);
+		}
+	}
+
+	private async syncBulkDeleteToFile(tasks: Task[]): Promise<void> {
+		if (!this.sourceFile || tasks.length === 0) return;
+		try {
+			const content = await this.app.vault.read(this.sourceFile);
+			const lines = content.split('\n');
+			const indicesToRemove = new Set(tasks.map(t => t.lineIndex));
+			const newLines = lines.filter((_, i) => !indicesToRemove.has(i));
+			await this.app.vault.modify(this.sourceFile, newLines.join('\n'));
+		} catch (e) {
+			new Notice('Task Planner: could not clear completed tasks from file.');
 			console.error(e);
 		}
 	}
