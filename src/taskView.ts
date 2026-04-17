@@ -38,6 +38,7 @@ export class TaskPlannerView extends ItemView {
 	private listEl: HTMLElement | null = null;
 	private footerEl: HTMLElement | null = null;
 
+	// eslint-disable-next-line obsidianmd/prefer-active-doc
 	constructor(leaf: WorkspaceLeaf, plugin: TaskPlannerPlugin) {
 		super(leaf);
 		this.plugin = plugin;
@@ -48,7 +49,7 @@ export class TaskPlannerView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return 'Task Planner';
+		return 'Task planner';
 	}
 
 	getIcon(): string {
@@ -61,9 +62,10 @@ export class TaskPlannerView extends ItemView {
 		this.render();
 	}
 
-	async onClose(): Promise<void> {
+	onClose(): Promise<void> {
 		this.sortable?.destroy();
 		this.sortable = null;
+		return Promise.resolve();
 	}
 
 	// -------------------------------------------------------------------------
@@ -143,11 +145,11 @@ export class TaskPlannerView extends ItemView {
 
 		// Title + refresh
 		const titleRow = header.createDiv({ cls: 'tp-title-row' });
-		titleRow.createEl('h4', { text: 'Task Planner', cls: 'tp-title' });
+		titleRow.createEl('h4', { text: 'Task planner', cls: 'tp-title' });
 
 		const refreshBtn = titleRow.createEl('button', { cls: 'tp-btn-icon', title: 'Reload from active note' });
-		refreshBtn.innerHTML = '↺';
-		refreshBtn.addEventListener('click', () => this.refresh());
+		refreshBtn.setText('↺');
+		refreshBtn.addEventListener('click', () => { void this.refresh(); });
 
 		// Source file name
 		if (this.sourceFile) {
@@ -166,7 +168,7 @@ export class TaskPlannerView extends ItemView {
 		const startRow = header.createDiv({ cls: 'tp-start-row' });
 		startRow.createSpan({ text: 'Start:', cls: 'tp-label' });
 
-		const input = startRow.createEl('input', { cls: 'tp-start-input', type: 'time' }) as HTMLInputElement;
+		const input = startRow.createEl('input', { cls: 'tp-start-input', type: 'time' });
 		const h = this.startTime.getHours().toString().padStart(2, '0');
 		const m = this.startTime.getMinutes().toString().padStart(2, '0');
 		input.value = `${h}:${m}`;
@@ -240,7 +242,7 @@ export class TaskPlannerView extends ItemView {
 
 		// Drag handle
 		const handle = card.createDiv({ cls: 'tp-drag-handle', title: 'Drag to reorder' });
-		handle.innerHTML = '⠿';
+		handle.setText('⠿');
 
 		// Main content
 		const body = card.createDiv({ cls: 'tp-card-body' });
@@ -278,14 +280,14 @@ export class TaskPlannerView extends ItemView {
 				cls: 'tp-btn-icon tp-btn-complete',
 				title: 'Mark complete',
 			});
-			completeBtn.innerHTML = '✓';
+			completeBtn.setText('✓');
 			completeBtn.addEventListener('click', () => this.completeTask(task));
 		} else {
 			const uncompleteBtn = actions.createEl('button', {
 				cls: 'tp-btn-icon tp-btn-uncomplete',
 				title: 'Mark incomplete',
 			});
-			uncompleteBtn.innerHTML = '↩';
+			uncompleteBtn.setText('↩');
 			uncompleteBtn.addEventListener('click', () => this.uncompleteTask(task));
 		}
 
@@ -293,7 +295,7 @@ export class TaskPlannerView extends ItemView {
 			cls: 'tp-btn-icon tp-btn-delete',
 			title: 'Remove from planner',
 		});
-		deleteBtn.innerHTML = '✕';
+		deleteBtn.setText('✕');
 		deleteBtn.addEventListener('click', () => this.deleteTask(task));
 
 		return card;
@@ -320,7 +322,7 @@ export class TaskPlannerView extends ItemView {
 
 		for (let i = 0; i < activeTasks.length; i++) {
 			const task = activeTasks[i]!;
-			const label = this.listEl.querySelector(`[data-start-label="${task.id}"]`) as HTMLElement | null;
+			const label = this.listEl.querySelector(`[data-start-label="${task.id}"]`);
 			if (label) label.textContent = formatTime(time);
 			time = addMinutes(time, task.durationMinutes);
 		}
@@ -329,8 +331,8 @@ export class TaskPlannerView extends ItemView {
 		for (const task of activeTasks) {
 			const card = this.listEl.querySelector(`[data-task-id="${task.id}"]`);
 			if (card) {
-				const badge = card.querySelector('.tp-badge-dur') as HTMLElement | null;
-				if (badge && !badge.contains(document.activeElement)) {
+				const badge = card.querySelector('.tp-badge-dur');
+				if (badge && !badge.contains(activeDocument.activeElement)) {
 					badge.textContent = formatDuration(task.durationMinutes);
 				}
 			}
@@ -371,7 +373,7 @@ export class TaskPlannerView extends ItemView {
 				text: 'Reset all',
 				attr: { title: 'Reset all recurring tasks to incomplete' },
 			});
-			resetBtn.addEventListener('click', () => this.resetRecurring().catch(console.error));
+			resetBtn.addEventListener('click', () => { void this.resetRecurring().catch(console.error); });
 		}
 	}
 
@@ -384,7 +386,7 @@ export class TaskPlannerView extends ItemView {
 		const prev = badge.textContent ?? '';
 		badge.empty();
 
-		const input = badge.createEl('input', { cls: 'tp-dur-input', type: 'text' }) as HTMLInputElement;
+		const input = badge.createEl('input', { cls: 'tp-dur-input', type: 'text' });
 		input.value = prev;
 		input.style.width = `${Math.max(prev.length + 1, 4)}ch`;
 		input.select();
@@ -405,7 +407,7 @@ export class TaskPlannerView extends ItemView {
 			}
 		};
 
-		input.addEventListener('blur', commit);
+		input.addEventListener('blur', () => { void commit(); });
 		input.addEventListener('keydown', (e) => {
 			if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
 			if (e.key === 'Escape') { badge.textContent = prev; }
@@ -428,7 +430,7 @@ export class TaskPlannerView extends ItemView {
 		const prevColor = this.categoryColor(prevCategory);
 		badge.empty();
 
-		const select = badge.createEl('select', { cls: 'tp-cat-select' }) as HTMLSelectElement;
+		const select = badge.createEl('select', { cls: 'tp-cat-select' });
 		// Match the select text color to the badge text color
 		select.style.color = prevColor;
 		for (const cat of allCategories) {

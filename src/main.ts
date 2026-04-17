@@ -17,19 +17,19 @@ export default class TaskPlannerPlugin extends Plugin {
 		// Command: open task planner
 		this.addCommand({
 			id: 'open-task-planner',
-			name: 'Open Task Planner',
+			name: 'Open task planner',
 			callback: () => this.activateView(),
 		});
 
 		// Ribbon icon for quick access
-		this.addRibbonIcon('check-square', 'Task Planner', () => this.activateView());
+		this.addRibbonIcon('check-square', 'Task planner', () => this.activateView());
 
 		// Settings tab
 		this.addSettingTab(new TaskPlannerSettingsTab(this.app, this));
 	}
 
 	onunload(): void {
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_TASK_PLANNER);
+		// intentionally empty — leaves are managed by Obsidian
 	}
 
 	async activateView(): Promise<void> {
@@ -38,7 +38,7 @@ export default class TaskPlannerPlugin extends Plugin {
 		// If already open, reveal it
 		const existing = workspace.getLeavesOfType(VIEW_TYPE_TASK_PLANNER);
 		if (existing.length > 0) {
-			workspace.revealLeaf(existing[0]!);
+			void workspace.revealLeaf(existing[0]!);
 			return;
 		}
 
@@ -49,7 +49,7 @@ export default class TaskPlannerPlugin extends Plugin {
 			type: VIEW_TYPE_TASK_PLANNER,
 			active: true,
 		});
-		workspace.revealLeaf(leaf);
+		void workspace.revealLeaf(leaf);
 	}
 
 	async loadSettings(): Promise<void> {

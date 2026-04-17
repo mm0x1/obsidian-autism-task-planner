@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: TaskPlannerSettings = {
 export class TaskPlannerSettingsTab extends PluginSettingTab {
   plugin: TaskPlannerPlugin;
 
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app: App, plugin: TaskPlannerPlugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -49,13 +50,13 @@ export class TaskPlannerSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Task Planner Settings" });
+    new Setting(containerEl).setName("Task planner").setHeading();
 
     // --- Default start time ---
     new Setting(containerEl)
       .setName("Default start time")
       .setDesc(
-        "Leave blank to use current time when the panel opens. Format: HH:MM (24h), e.g. 09:00.",
+        "Leave blank to use current time when the panel opens. Format: HH:mm (24h), e.g. 09:00.",
       )
       .addText((text) =>
         text
@@ -68,12 +69,12 @@ export class TaskPlannerSettingsTab extends PluginSettingTab {
       );
 
     // --- Sync toggles ---
-    containerEl.createEl("h3", { text: "Markdown sync" });
+    new Setting(containerEl).setName("Markdown sync").setHeading();
 
     new Setting(containerEl)
       .setName("Sync reorder back to file")
       .setDesc(
-        "When enabled, dragging cards to reorder them rewrites the markdown file in the new order.",
+        "When enabled, dragging cards to reorder them rewrites the Markdown file in the new order.",
       )
       .addToggle((toggle) =>
         toggle
@@ -87,7 +88,7 @@ export class TaskPlannerSettingsTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Sync completions to file")
       .setDesc(
-        "When enabled, completing a task rewrites that line as - [x] ... in the markdown file.",
+        "When enabled, completing a task rewrites that line as - [X] ... In the Markdown file.",
       )
       .addToggle((toggle) =>
         toggle
@@ -101,7 +102,7 @@ export class TaskPlannerSettingsTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Sync edited durations to file")
       .setDesc(
-        "When enabled, editing a duration in the panel writes the change back to the markdown file.",
+        "When enabled, editing a duration in the panel writes the change back to the Markdown file.",
       )
       .addToggle((toggle) =>
         toggle
@@ -113,7 +114,7 @@ export class TaskPlannerSettingsTab extends PluginSettingTab {
       );
 
     // --- Category colors ---
-    containerEl.createEl("h3", { text: "Category colors" });
+    new Setting(containerEl).setName("Category colors").setHeading();
 
     const colors = this.plugin.settings.categoryColors;
     const allCategories = Array.from(

@@ -91,7 +91,7 @@ export function parseLine(line: string, lineIndex: number): Task | null {
   const durMatch = content.match(DURATION_RE);
   if (durMatch) {
     durationMinutes = parseDurationToken(durMatch[1]!);
-    content = content.slice(0, content.length - durMatch[0]!.length).trimEnd();
+    content = content.slice(0, content.length - durMatch[0].length).trimEnd();
   }
 
   const name = content.trim();

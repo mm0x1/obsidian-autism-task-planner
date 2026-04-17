@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-task-planner",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "Sequenced task planner with time estimates for daily task lists.",
 	"main": "main.js",
 	"type": "module",
@@ -13,7 +13,11 @@
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"@types/sortablejs": "^1.15.0",
+		"@typescript-eslint/parser": "^8.58.2",
 		"esbuild": "0.25.5",
+		"eslint": "^9.39.4",
+		"eslint-plugin-no-unsanitized": "^4.1.5",
+		"eslint-plugin-obsidianmd": "^0.2.3",
 		"tslib": "2.4.0",
 		"typescript": "^5.8.3"
 	},

@@ -1,8 +1,8 @@
 {
 	"id": "autism-task-planner",
 	"name": "Autism Task Planner",
-	"version": "1.0.6",
-	"minAppVersion": "0.15.0",
+	"version": "1.0.7",
+	"minAppVersion": "1.7.2",
 	"description": "Reduce your mental load by sequencing your tasks in a drag-and-drop UI with compounding time estimates.",
 	"author": "mm0x1",
 	"authorUrl": "https://github.com/mm0x1",
