@@ -11,7 +11,11 @@ export default class TaskPlannerPlugin extends Plugin {
 		// Register the sidebar view
 		this.registerView(
 			VIEW_TYPE_TASK_PLANNER,
-			(leaf: WorkspaceLeaf) => new TaskPlannerView(leaf, this),
+			(leaf: WorkspaceLeaf) => {
+				const view = new TaskPlannerView(leaf);
+				view.plugin = this;
+				return view;
+			},
 		);
 
 		// Command: open task planner

@@ -1,4 +1,4 @@
-import { ItemView, MarkdownView, Notice, TFile, WorkspaceLeaf } from 'obsidian';
+import { ItemView, MarkdownView, Notice, TFile } from 'obsidian';
 import Sortable from 'sortablejs';
 import type TaskPlannerPlugin from './main';
 import {
@@ -37,12 +37,6 @@ export class TaskPlannerView extends ItemView {
 	private startTimeInput: HTMLInputElement | null = null;
 	private listEl: HTMLElement | null = null;
 	private footerEl: HTMLElement | null = null;
-
-	// eslint-disable-next-line obsidianmd/prefer-active-doc
-	constructor(leaf: WorkspaceLeaf, plugin: TaskPlannerPlugin) {
-		super(leaf);
-		this.plugin = plugin;
-	}
 
 	getViewType(): string {
 		return VIEW_TYPE_TASK_PLANNER;

@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { PluginSettingTab, Setting } from "obsidian";
 import type TaskPlannerPlugin from "./main";
 
 export interface TaskPlannerSettings {
@@ -40,12 +40,6 @@ export const DEFAULT_SETTINGS: TaskPlannerSettings = {
 export class TaskPlannerSettingsTab extends PluginSettingTab {
   plugin: TaskPlannerPlugin;
 
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
-  constructor(app: App, plugin: TaskPlannerPlugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
@@ -56,7 +50,7 @@ export class TaskPlannerSettingsTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName("Default start time")
       .setDesc(
-        "Leave blank to use current time when the panel opens. Format: HH:mm (24h), e.g. 09:00.",
+        "Leave blank to use the current time. Enter a time in 24-hour format, e.g. 09:00.",
       )
       .addText((text) =>
         text
